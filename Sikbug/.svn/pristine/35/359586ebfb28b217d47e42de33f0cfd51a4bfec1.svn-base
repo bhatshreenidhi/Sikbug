@@ -1,0 +1,91 @@
+﻿<phone:PhoneApplicationPage 
+    x:Class="Sikbug.View.FavoriteLocation"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:phone="clr-namespace:Microsoft.Phone.Controls;assembly=Microsoft.Phone"
+    xmlns:shell="clr-namespace:Microsoft.Phone.Shell;assembly=Microsoft.Phone"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    FontFamily="{StaticResource PhoneFontFamilyNormal}"
+    FontSize="{StaticResource PhoneFontSizeNormal}"
+    Foreground="{StaticResource PhoneForegroundBrush}"
+    SupportedOrientations="Portrait" Orientation="Portrait"
+    mc:Ignorable="d" d:DesignHeight="768" d:DesignWidth="480"
+    shell:SystemTray.IsVisible="True">
+
+    <!--LayoutRoot is the root grid where all page content is placed-->
+    <Grid Name="grvOuterGrid">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="100"/>
+            <RowDefinition Height="*"/>
+        </Grid.RowDefinitions>
+
+        <Grid x:Name="grvTitle" Background="#FF56574F" Grid.Row="0">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="325"></ColumnDefinition>
+                <ColumnDefinition Width="75"></ColumnDefinition>
+                <ColumnDefinition Width="75"></ColumnDefinition>
+            </Grid.ColumnDefinitions>
+            <Image Name="imgAddLocation" Grid.Column="1" Source="/Sikbug;component/Resources/Images/addLocation.png" MouseLeftButtonDown="imgAddLocation_MouseLeftButtonDown"></Image>
+            <Image Name="imgEditLocation" Grid.Column="2" Source="/Sikbug;component/Resources/Images/pencil.png" MouseLeftButtonDown="imgEditLocation_MouseLeftButtonDown"></Image>
+        </Grid>
+
+        <Grid x:Name="LayoutRoot" Background="#FF56574F" Grid.Row="1">
+        <Grid x:Name="ContentPanel" Background="#FFC4C5BF" Margin="0,100,0,0">
+                          <ListBox HorizontalAlignment="Left" Name="lsbSymptoms" VerticalAlignment="Top" Width="480" Grid.Row="1" >
+                <!--<TextBlock Text="Symptoms:"></TextBlock>-->
+                <ListBox.ItemContainerStyle>
+                    <Style TargetType="ListBoxItem">
+                        <Setter Property="Template">
+                            <Setter.Value>
+                                <ControlTemplate TargetType="ListBoxItem">
+                                    <Border BorderBrush="LightGray" BorderThickness="1" Padding="4">
+                                        <ContentPresenter />
+                                    </Border>
+                                </ControlTemplate>
+                            </Setter.Value>
+                        </Setter>
+                    </Style>
+                </ListBox.ItemContainerStyle>
+                <!--<ListBoxItem>
+                    <StackPanel Orientation="Horizontal">
+                        <TextBlock Text="ROHAN" Padding="20,5,0,5" FontSize="36" Foreground="#FF99B61C" FontFamily="Calibri" FontWeight="Bold"></TextBlock>                       
+                    </StackPanel>                  
+                </ListBoxItem>-->
+                <ListBox.ItemTemplate>
+                    <DataTemplate>
+                        <StackPanel Orientation="Horizontal">
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="75"></ColumnDefinition>
+                                    <ColumnDefinition Width="400"></ColumnDefinition>
+                                    </Grid.ColumnDefinitions>
+                                    <TextBlock Text="{Binding FavoriteLocationName}" Grid.Column="01" Padding="20,15,0,15" FontSize="36" FontWeight="Bold" Foreground="#FF99B61C" FontFamily="Calibri"></TextBlock>
+                                    <Image Name="imglstPanel" Grid.Column="0" Source="/Sikbug;component/Resources/Images/delete.png" Visibility="Collapsed"></Image>
+                                </Grid>
+                            </StackPanel>
+                    </DataTemplate>
+                </ListBox.ItemTemplate>
+            </ListBox>
+       
+        </Grid>
+    </Grid>
+        <Grid Name="grvStkPanel" Grid.Row="1" Margin="0,3,0,565">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="330"></ColumnDefinition>
+                <ColumnDefinition Width="*"></ColumnDefinition>
+            </Grid.ColumnDefinitions>
+           
+            <TextBlock Text="Favorite Locations" Padding="25,25,0,15" FontSize="32" Foreground="DarkGray" FontFamily="Calibri" FontWeight="Bold" Grid.Column="0"></TextBlock>
+            <Button Name="btnDone" Visibility="Collapsed" Background="Orange" Grid.Column="1" Content="Done" Margin="26,13,6,19" BorderBrush="{x:Null}" Click="btnDone_Click"></Button>
+        </Grid>
+    </Grid>
+    <!--Sample code showing usage of ApplicationBar-->
+    <!--<phone:PhoneApplicationPage.ApplicationBar>
+        <shell:ApplicationBar IsVisible="True" IsMenuEnabled="True">
+            <shell:ApplicationBarIconButton IconUri="/Sikbug;component/Resources/Images/addLocation.png" Text="Add" Click="ApplicationBarIconButton_Click"/>
+            <shell:ApplicationBarIconButton IconUri="/Sikbug;component/Resources/Images/pencil.png" Text="Edit" Click="ApplicationBarIconButton_Click"/>
+           </shell:ApplicationBar>
+    </phone:PhoneApplicationPage.ApplicationBar>-->
+
+</phone:PhoneApplicationPage>

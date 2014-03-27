@@ -1,0 +1,51 @@
+﻿using System;
+using System.Net;
+using System.Windows;
+using System.Windows.Controls;
+using System.Windows.Documents;
+using System.Windows.Ink;
+using System.Windows.Input;
+using System.Windows.Media;
+using System.Windows.Media.Animation;
+using System.Windows.Shapes;
+using System.Collections.ObjectModel;
+
+namespace Sikbug.Services
+{
+    public class DiseaseList
+    {
+            public static ObservableCollection<Model.Disease> getDiseaseList()
+            {
+                ObservableCollection<Model.Disease> diseaseList = new ObservableCollection<Model.Disease>();
+                Model.Disease disease1 = new Model.Disease();
+                disease1.DiseaseName = "Fever";
+
+                Model.Disease disease2 = new Model.Disease();
+                disease2.DiseaseName = "Stomach Ache";
+
+                Model.Disease disease3 = new Model.Disease();
+                disease3.DiseaseName = "Malaria";
+
+                Model.Disease disease4 = new Model.Disease();
+                disease4.DiseaseName = "Cold";
+
+                Model.Disease disease5 = new Model.Disease();
+                disease5.DiseaseName = "Chicken Pox";
+
+                Model.Disease disease6 = new Model.Disease();
+                disease6.DiseaseName = "Small Pox";
+
+                
+                diseaseList.Add(disease1);
+                diseaseList.Add(disease2);
+                diseaseList.Add(disease3);
+                diseaseList.Add(disease4);
+                diseaseList.Add(disease5);
+                diseaseList.Add(disease6);
+
+                return diseaseList;
+            }
+
+      
+    }
+}

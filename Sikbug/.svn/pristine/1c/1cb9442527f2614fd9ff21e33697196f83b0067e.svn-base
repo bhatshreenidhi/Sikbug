@@ -1,0 +1,350 @@
+﻿using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Net;
+using System.Windows;
+using System.Windows.Controls;
+using System.Windows.Documents;
+using System.Windows.Input;
+using System.Windows.Media;
+using System.Windows.Media.Animation;
+using System.Windows.Shapes;
+using Microsoft.Phone.Controls;
+using System.Collections.ObjectModel;
+using Sikbug.Model;
+using Sikbug.Helpers;
+using Sikbug.Utils;
+using System.Windows.Navigation;
+using System.ComponentModel;
+using Sikbug.Services;
+
+namespace Sikbug.View
+{
+    public partial class HomePanaroma : PhoneApplicationPage
+    {
+        BackgroundWorker worker = new BackgroundWorker();
+        AroundMeService aroundMeSrvice;
+        //*** (List of all sicknesses)
+        List<Disease> diseaseList = new List<Disease>();
+        //Check for add Fav page return
+        public static string AddFavfromForm;
+        public static string AddFavLatitude;
+        public static string AddFavLongitude;
+        public static string AddFavLocName;
+
+        // *** to be discussed with Rohan
+        //Done to trigger event when the control comes to panaroma from Add fav's
+        protected override void OnNavigatedTo(NavigationEventArgs e)
+        {
+            if (AddFavfromForm != null && AddFavfromForm.Trim().Equals("AddFavorite"))
+            {
+                AddFavfromForm = "";
+                Services.FavouriteServices favouriteService = new Services.FavouriteServices();
+                favouriteService.addFavouriteLocations(AddFavLatitude, AddFavLongitude, AddFavLocName);
+                favouriteService.AddFavouriteFinished += new Services.FavouriteServices.AddFavouriteDelegate(favouriteService_AddFavouriteFinished);
+            }
+        }
+
+        public HomePanaroma()
+        {
+            InitializeComponent();
+            worker.DoWork += new DoWorkEventHandler(worker_DoWork);
+            worker.RunWorkerAsync();
+            LoadFavourites();
+            lstboxSicknessList.ItemsSource = ViewModel.VMSicknessList.getDiseaseList();
+            //*** To be binded (List of all sicknesses)           
+        }
+
+        void worker_DoWork(object sender, DoWorkEventArgs e)
+        {
+
+            Utils.Location location = new Utils.Location();
+            location.getLocation();
+            location.getLocationFinished += new Utils.Location.LocationDelegate(location_getLocationFinished);
+
+        }
+
+        void location_getLocationFinished(Model.Location location)
+        {
+            if (location != null)
+            {
+                aroundMeSrvice = new AroundMeService();
+                double lat = 12.92;
+                double lon = 77.61;
+                double radius = 10;
+                //aroundMeSrvice.GetSicknesses(location.Coordinate.Latitude, location.Coordinate.Longitude, 0);
+                aroundMeSrvice.GetSicknesses(lat, lon, radius);
+                aroundMeSrvice.SicknessWithCoordinatesFinished += new AroundMeService.SicknessWithCoordinatesDelegate(aroundMeSrvice_SicknessWithCoordinatesFinished);
+            }
+        }
+
+        void aroundMeSrvice_SicknessWithCoordinatesFinished(List<JsonSickness> sicknessList)
+        {
+            if (sicknessList != null)
+            {
+                Dispatcher.BeginInvoke(() => { txbSicknessNumber.Text = sicknessList.Count.ToString(); });
+            }
+        }
+
+        #region REPORT SICKNESS LIST
+
+        private void btnSubmit_Click(object sender, RoutedEventArgs e)
+        {
+            SearchSelectedDiseases(lstboxSicknessList);
+
+            string str = String.Empty;
+            for (int count = 0; count < diseaseList.Count; count++)
+            {
+                str = str + " " + diseaseList[count].DiseaseName;
+                if (count < diseaseList.Count-1)
+                {
+                    str = str + ",";
+                }
+
+            }
+            
+             if (diseaseList.Count > 0)
+            {
+                diseaseList.Clear();
+                TwitterSettings.QueryString = str;
+                NavigationService.Navigate(new Uri("/View/ReportSickness.xaml", UriKind.RelativeOrAbsolute));
+            }
+            else
+            {
+                MessageBox.Show("Select disease to submit");
+            }
+        }
+
+
+        private void btnClear_Click(object sender, RoutedEventArgs e)
+        {
+            diseaseList.Clear();
+            SearchVisualTree(this.lstboxSicknessList);
+        }
+
+
+        private T FindFirstElementInVisualTree<T>(DependencyObject parentElement) where T : DependencyObject
+        {
+            var count = VisualTreeHelper.GetChildrenCount(parentElement);
+            if (count == 0)
+                return null;
+
+            for (int i = 0; i < count; i++)
+            {
+                var child = VisualTreeHelper.GetChild(parentElement, i);
+
+                if (child != null && child is T)
+                {
+                    return (T)child;
+                }
+                else
+                {
+                    var result = FindFirstElementInVisualTree<T>(child);
+                    if (result != null)
+                        return result;
+
+                }
+            }
+            return null;
+        }
+
+
+        private void SearchVisualTree(DependencyObject targetElement)
+        {
+            var count = VisualTreeHelper.GetChildrenCount(targetElement);
+            if (count == 0)
+                return;
+
+            for (int i = 0; i < count; i++)
+            {
+                var child = VisualTreeHelper.GetChild(targetElement, i);
+                if (child is CheckBox)
+                {
+                    CheckBox targetItem = (CheckBox)child;
+                    targetItem.IsChecked = false;
+                    return;
+                }
+                else
+                {
+                    SearchVisualTree(child);
+                }
+            }
+        }
+
+        private void SearchSelectedDiseases(DependencyObject targetElement)
+        {
+            var count = VisualTreeHelper.GetChildrenCount(targetElement);
+            if (count == 0)
+                return;
+
+            for (int i = 0; i < count; i++)
+            {
+                var child = VisualTreeHelper.GetChild(targetElement, i);
+                if (child is CheckBox)
+                {
+                    CheckBox targetItem = (CheckBox)child;
+                    if ((bool)targetItem.IsChecked)
+                    {
+                        Disease diseaseName = (Sikbug.Model.Disease)((targetItem).DataContext);
+                        diseaseList.Add(diseaseName);
+                    }
+                    return;
+                }
+                else
+                {
+                    SearchSelectedDiseases(child);
+                }
+            }
+        }
+
+
+
+        #endregion
+
+        #region SICKNESS AROUND ME
+
+        private void btnAroundMe_Click(object sender, RoutedEventArgs e)
+        {
+
+            NavigationService.Navigate(new Uri("/View/MapPage.xaml", UriKind.Relative));
+        }
+
+        #endregion
+
+        #region SETTINGS
+
+        private void btnMyAccount_Click(object sender, RoutedEventArgs e)
+        {
+            NavigationService.Navigate(new Uri("/View/MyAccount.xaml", UriKind.Relative));
+        }
+
+        private void btnShare_Click(object sender, RoutedEventArgs e)
+        {
+            NavigationService.Navigate(new Uri("/View/ShareSikbug.xaml", UriKind.Relative));
+        }
+
+        private void btnAboutApp_Click(object sender, RoutedEventArgs e)
+        {
+            var about = new Coding4FunAboutPrompt();
+            //about.Show("Rohan Arora", "ron.arora22", "rohan.arora22@yahoo.com", "http://www.google.com");
+            about.Body = new View.About();
+            about.Show();
+        }
+
+        private void hlkLogin_Click(object sender, RoutedEventArgs e)
+        {
+            NavigationService.Navigate(new Uri("/View/MyAccount.xaml", UriKind.Relative));
+        }
+
+        #endregion
+
+        #region FAVOURITES
+
+        #region FAV LIST
+
+        //Loads the favourite service to get the Favourite Location
+
+        private void LoadFavourites()
+        {
+
+            Services.FavouriteServices favouriteService = new Services.FavouriteServices();
+            favouriteService.getFavouriteList();
+            favouriteService.downloadFavouriteFinished += new Services.FavouriteServices.FavouriteDelegate(favouriteService_downloadFavouriteFinished);
+
+        }
+
+        //Loads the favourite service to get the Favourite Location
+        void favouriteService_downloadFavouriteFinished(List<JsonFavourites> JsonfavouriteList)
+        {
+            //Storing the list of favourite locations
+            ObservableCollection<Favourite> favouriteList = new ObservableCollection<Favourite>();
+
+            foreach (JsonFavourites favourite in JsonfavouriteList)
+            {
+                favouriteList.Add(favourite.favorite);
+            }
+
+            reorderListBox.ItemsSource = favouriteList;
+        }
+
+        #endregion
+
+        #region ADD FAVS
+
+        private void favourite_AddButton_Click(object sender, RoutedEventArgs e)
+        {
+
+            NavigationService.Navigate(new Uri("/View/AddFavourite.xaml", UriKind.Relative));
+
+        }
+
+        void favouriteService_AddFavouriteFinished(bool result)
+        {
+            Services.FavouriteServices favouriteService = new Services.FavouriteServices();
+            favouriteService.getFavouriteList();
+            favouriteService.downloadFavouriteFinished += new Services.FavouriteServices.FavouriteDelegate(favouriteService_downloadFavouriteFinished);
+        }
+
+        #endregion
+
+        #region DELETE FAVS
+
+        private void reorderListBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            if ((bool)favourite_DeleteButton.IsChecked)
+            {
+
+                ReorderListBoxDemo.ReorderListBox listBox = (sender as ReorderListBoxDemo.ReorderListBox);
+                if (listBox != null && listBox.SelectedIndex != -1 && listBox.SelectedItem as Favourite != null)
+                {
+                    MessageBoxResult result = MessageBox.Show("Do you want to delete " + (listBox.SelectedItem as Favourite).name, "Delete Favourite", MessageBoxButton.OKCancel);
+                    if (result == MessageBoxResult.OK)
+                    {
+                        int id = (listBox.SelectedItem as Favourite).id;
+
+                        Services.FavouriteServices favouriteService = new Services.FavouriteServices();
+                        favouriteService.deleteFavouriteLocation(id);
+                        favouriteService.DeleteFavouriteFinished += new Services.FavouriteServices.DeleteFavouriteDelegate(favouriteService_DeleteFavouriteFinished);
+                    }
+                }
+
+                listBox.SelectedIndex = -1;
+            }
+        }
+
+        void favouriteService_DeleteFavouriteFinished(bool result)
+        {
+            Services.FavouriteServices favouriteService = new Services.FavouriteServices();
+            favouriteService.getFavouriteList();
+            favouriteService.downloadFavouriteFinished += new Services.FavouriteServices.FavouriteDelegate(favouriteService_downloadFavouriteFinished);
+        }
+
+        private void favourite_DeleteButton_Click(object sender, RoutedEventArgs e)
+        {
+
+        }
+
+        #endregion
+
+        #endregion
+
+
+        private void inputPanel_MouseEnter(object sender, MouseEventArgs e)
+        {
+            //inputPanel.Visibility = Visibility.Collapsed;
+        }
+
+        
+
+
+
+
+
+
+
+
+
+
+    }
+
+}

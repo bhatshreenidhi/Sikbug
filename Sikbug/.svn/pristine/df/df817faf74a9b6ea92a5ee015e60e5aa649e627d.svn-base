@@ -1,0 +1,138 @@
+﻿using System;
+using System.Net;
+using System.Windows;
+using System.Windows.Controls;
+using System.Windows.Documents;
+using System.Windows.Ink;
+using System.Windows.Input;
+using System.Windows.Media;
+using System.Windows.Media.Animation;
+using System.Windows.Shapes;
+using System.Text;
+using System.IO;
+using System.Collections.Generic;
+using Sikbug.Model;
+using System.Collections.ObjectModel;
+
+namespace Sikbug.Services
+{
+    public class FavouriteServices
+    {
+
+        public delegate void FavouriteDelegate(List<JsonFavourites> JsonfavouriteList);
+        public event FavouriteDelegate downloadFavouriteFinished;
+
+        public delegate void AddFavouriteDelegate(bool result);
+        public event AddFavouriteDelegate AddFavouriteFinished;
+
+        public delegate void DeleteFavouriteDelegate(bool result);
+        public event DeleteFavouriteDelegate DeleteFavouriteFinished;
+
+
+        string apiToken = "c3cc0ee5-15b7-4ac9-bc87-b43603dac47a";
+
+
+        #region Service calls
+
+
+        //Method to get the list of favourite
+        public void getFavouriteList()
+        {
+            string favouriteUri = "http://ws.sikbug.com/api/v1/favorites?api_token="+apiToken+"&api_key=58cd8fd4-85ff-4b0a-9e26-eb4466db2e19";
+
+            WebClient favClient = new WebClient();
+            favClient.DownloadStringCompleted += new DownloadStringCompletedEventHandler(favClient_DownloadStringCompleted);
+            favClient.DownloadStringAsync(new Uri(favouriteUri));
+        }
+
+        public void addFavouriteLocations(string latitude, string longitude, string locationName)
+        {
+
+            string addFavouriteUri = "http://ws.sikbug.com/api/v1/favorites?favorite[latitude]=12.94&favorite[longitude]=77.70&favorite[name]="+locationName+"&api_token=" + apiToken + "&api_key=58cd8fd4-85ff-4b0a-9e26-eb4466db2e19";
+
+            WebClient addfavClient = new WebClient();
+            addfavClient.UploadStringCompleted += new UploadStringCompletedEventHandler(addfavClient_UploadStringCompleted);
+            addfavClient.UploadStringAsync(new Uri(addFavouriteUri), "POST", "");
+
+        }
+        
+
+        public void deleteFavouriteLocation(int favouriteId)
+        {
+
+            string deleteFavouriteUri = "http://ws.sikbug.com/api/v1/favorites/"+favouriteId.ToString()+"?api_token="+apiToken+"&api_key=58cd8fd4-85ff-4b0a-9e26-eb4466db2e19";
+
+            WebClient deleteFavouriteClient = new WebClient();
+            deleteFavouriteClient.UploadStringCompleted += new UploadStringCompletedEventHandler(deleteFavouriteClient_UploadStringCompleted);
+            deleteFavouriteClient.UploadStringAsync(new Uri(deleteFavouriteUri), "DELETE", favouriteId.ToString());
+        }
+
+        
+
+        #endregion
+
+
+        #region Call backs
+
+
+        void addfavClient_UploadStringCompleted(object sender, UploadStringCompletedEventArgs e)
+        {
+            
+            string Jsonresult = e.Result;
+
+            // convert string to stream
+            byte[] byteArray = Encoding.UTF8.GetBytes(Jsonresult);
+
+            // convert stream to string
+            MemoryStream stream = new MemoryStream(byteArray);
+
+            System.Runtime.Serialization.Json.DataContractJsonSerializer sez = new System.Runtime.Serialization.Json.DataContractJsonSerializer(typeof(List<JsonFavourites>));
+
+            AddFavouriteFinished(true); 
+        }
+
+      
+         void deleteFavouriteClient_UploadStringCompleted(object sender, UploadStringCompletedEventArgs e)
+         {
+             string Jsonresult = e.Result;
+
+             // convert string to stream
+             byte[] byteArray = Encoding.UTF8.GetBytes(Jsonresult);
+
+             // convert stream to string
+             MemoryStream stream = new MemoryStream(byteArray);
+
+             System.Runtime.Serialization.Json.DataContractJsonSerializer sez = new System.Runtime.Serialization.Json.DataContractJsonSerializer(typeof(List<JsonFavourites>));
+
+             DeleteFavouriteFinished(true);
+         }
+
+         void favClient_DownloadStringCompleted(object sender, DownloadStringCompletedEventArgs e)
+         {
+             try
+             {
+                 string Jsonresult = e.Result;
+
+                 // convert string to stream
+                 byte[] byteArray = Encoding.UTF8.GetBytes(Jsonresult);
+
+                 // convert stream to string
+                 MemoryStream stream = new MemoryStream(byteArray);
+
+                 System.Runtime.Serialization.Json.DataContractJsonSerializer sez = new System.Runtime.Serialization.Json.DataContractJsonSerializer(typeof(List<JsonFavourites>));
+
+                 List<JsonFavourites> JsonfavouriteList = new List<JsonFavourites>();
+                 JsonfavouriteList = (List<JsonFavourites>)sez.ReadObject(stream);
+                 downloadFavouriteFinished(JsonfavouriteList);
+             }
+             catch (Exception ex)
+             { 
+             }
+         }
+
+
+
+        #endregion
+
+    }
+}

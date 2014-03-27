@@ -1,0 +1,101 @@
+﻿<phone:PhoneApplicationPage 
+    x:Class="Sikbug.View.MyAccount"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:phone="clr-namespace:Microsoft.Phone.Controls;assembly=Microsoft.Phone"
+    xmlns:shell="clr-namespace:Microsoft.Phone.Shell;assembly=Microsoft.Phone"
+    xmlns:toolkit="clr-namespace:Microsoft.Phone.Controls;assembly=Microsoft.Phone.Controls.Toolkit"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    FontFamily="{StaticResource PhoneFontFamilyNormal}"
+    FontSize="{StaticResource PhoneFontSizeNormal}"
+    Foreground="{StaticResource PhoneForegroundBrush}"
+    SupportedOrientations="Portrait" Orientation="Portrait"
+    mc:Ignorable="d" d:DesignHeight="768" d:DesignWidth="480"
+    shell:SystemTray.IsVisible="True">
+
+    <toolkit:TransitionService.NavigationInTransition>
+        <toolkit:NavigationInTransition>
+            <toolkit:NavigationInTransition.Backward>
+                <toolkit:TurnstileTransition Mode="BackwardIn"/>
+            </toolkit:NavigationInTransition.Backward>
+            <toolkit:NavigationInTransition.Forward>
+                <toolkit:TurnstileTransition Mode="ForwardIn"/>
+            </toolkit:NavigationInTransition.Forward>
+        </toolkit:NavigationInTransition>
+    </toolkit:TransitionService.NavigationInTransition>
+    <toolkit:TransitionService.NavigationOutTransition>
+        <toolkit:NavigationOutTransition>
+            <toolkit:NavigationOutTransition.Backward>
+                <toolkit:TurnstileTransition Mode="BackwardOut"/>
+            </toolkit:NavigationOutTransition.Backward>
+            <toolkit:NavigationOutTransition.Forward>
+                <toolkit:TurnstileTransition Mode="ForwardOut"/>
+            </toolkit:NavigationOutTransition.Forward>
+        </toolkit:NavigationOutTransition>
+    </toolkit:TransitionService.NavigationOutTransition>
+
+    <!--LayoutRoot is the root grid where all page content is placed-->
+    <Grid x:Name="LayoutRoot" Background="#FF56574F">
+
+        <Grid x:Name="ContentPanel" Background="#FFC4C5BF" Margin="0,100,0,0">
+
+            <StackPanel Orientation="Horizontal" Margin="0,0,0,588">
+                <Image Source="/Sikbug;component/Resources/Images/Settings.png"></Image>
+                <TextBlock Text="My Account" Padding="0,25,0,15" FontSize="32" Foreground="DarkGray" FontFamily="Calibri" FontWeight="Bold"></TextBlock>
+            </StackPanel>
+
+            <ListBox HorizontalAlignment="Left" Margin="0,80,0,0" Name="lsbSettings" VerticalAlignment="Top" Width="480" >
+                <ListBox.ItemContainerStyle>
+                    <Style TargetType="ListBoxItem">
+                        <Setter Property="Template">
+                            <Setter.Value>
+                                <ControlTemplate TargetType="ListBoxItem">
+                                    <Border BorderBrush="LightGray" BorderThickness="1" Padding="4">
+                                        <ContentPresenter />
+                                    </Border>
+                                </ControlTemplate>
+                            </Setter.Value>
+                        </Setter>
+                    </Style>
+                </ListBox.ItemContainerStyle>
+                <ListBoxItem>
+                    <toolkit:ToggleSwitch Header="FACEBOOK">
+                        <toolkit:ToggleSwitch.HeaderTemplate>
+                            <DataTemplate>
+                                <StackPanel Orientation="Horizontal">
+                                    <Image  Height="100" Width="100" Source="/Sikbug;component/Resources/Images/Logos/facebook.png"></Image>
+                                    <ContentControl FontSize="{StaticResource PhoneFontSizeLarge}" Foreground="{StaticResource PhoneForegroundBrush}" Content="{Binding}" Padding="20,0,0,0" FontWeight="Bold" />
+                                </StackPanel>                                
+                            </DataTemplate>
+                        </toolkit:ToggleSwitch.HeaderTemplate>
+                    </toolkit:ToggleSwitch>
+                </ListBoxItem>
+                <ListBoxItem>
+                    <toolkit:ToggleSwitch Header="TWITTER">
+                        <toolkit:ToggleSwitch.HeaderTemplate>
+                            <DataTemplate>
+                                <StackPanel Orientation="Horizontal">
+                                    <Image Source="/Sikbug;component/Resources/Images/Logos/twitter.png" Height="100" Width="100"></Image>
+                                    <ContentControl FontSize="{StaticResource PhoneFontSizeLarge}" Foreground="{StaticResource PhoneForegroundBrush}" Content="{Binding}" Padding="20,0,0,0" FontWeight="Bold" />
+                                </StackPanel>
+                            </DataTemplate>
+                        </toolkit:ToggleSwitch.HeaderTemplate>
+                    </toolkit:ToggleSwitch>
+                </ListBoxItem>
+                <ListBoxItem>
+                    <toolkit:ToggleSwitch Header="CHROME">
+                        <toolkit:ToggleSwitch.HeaderTemplate>
+                            <DataTemplate>
+                                <StackPanel Orientation="Horizontal">
+                                    <Image Source="/Sikbug;component/Resources/Images/Logos/google.png" Height="100" Width="100"></Image>
+                                    <ContentControl FontSize="{StaticResource PhoneFontSizeLarge}" Foreground="{StaticResource PhoneForegroundBrush}" Content="{Binding}" Padding="20,0,0,0" FontWeight="Bold" />
+                                </StackPanel>
+                            </DataTemplate>
+                        </toolkit:ToggleSwitch.HeaderTemplate>
+                    </toolkit:ToggleSwitch>
+                </ListBoxItem>
+            </ListBox>
+        </Grid>
+    </Grid>
+</phone:PhoneApplicationPage>

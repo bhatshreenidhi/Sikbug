@@ -1,0 +1,331 @@
+﻿using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Net;
+using System.Windows;
+using System.Windows.Controls;
+using System.Windows.Documents;
+using System.Windows.Input;
+using System.Windows.Media;
+using System.Windows.Media.Animation;
+using System.Windows.Shapes;
+using Microsoft.Phone.Controls;
+using googlemaps;
+using Microsoft.Maps.MapControl;
+using System.Collections.ObjectModel;
+using System.Device.Location;
+using System.Text;
+using System.IO;
+using Sikbug.Model;
+using Sikbug.Utils;
+
+namespace Sikbug.View
+{
+    public partial class MapPage : PhoneApplicationPage
+    {
+        //List to bind the loactions
+        public ObservableCollection<Model.Location> DiseaseLocations = new ObservableCollection<Model.Location>();
+
+        public ObservableCollection<Model.Location> CurrentLocation = new ObservableCollection<Model.Location>();
+
+        //Adding a pushpin layer along with the popUP
+        Microsoft.Phone.Controls.Maps.MapLayer pushPinLayer = new Microsoft.Phone.Controls.Maps.MapLayer();
+        
+
+        //Add a mapItemControl for binding pushpins on to the MAP
+        Microsoft.Phone.Controls.Maps.MapItemsControl pushPinItemLoc = new Microsoft.Phone.Controls.Maps.MapItemsControl();
+
+        //Add a mapItemControl for binding pushpins on to the MAP
+        Microsoft.Phone.Controls.Maps.MapItemsControl pushPinItemDisease = new Microsoft.Phone.Controls.Maps.MapItemsControl();
+
+        //Add a mapItemControl for binding PopUP over the Pushpins
+        Microsoft.Phone.Controls.Maps.MapItemsControl pushPinItemPopUp = new Microsoft.Phone.Controls.Maps.MapItemsControl();
+
+        public MapPage()
+        {
+            InitializeComponent();
+
+            getCoordinates();
+
+            addItemToMap();
+            
+        
+        }
+
+        private void addItemToMap()
+        {
+            mapSikbug.Children.Add(pushPinLayer);
+            mapSikbug.Children.Add(pushPinItemDisease);
+            mapSikbug.Children.Add(pushPinItemLoc);
+
+            pushPinLayer.Visibility = Visibility.Collapsed;
+
+           
+            pushPinItemLoc.ItemTemplate = dataTemplatePushpin;
+            pushPinItemLoc.ItemsSource = DiseaseLocations;
+
+            pushPinItemDisease.ItemTemplate = dataTemplatePushPinCurrentLoc;
+            pushPinItemDisease.ItemsSource = CurrentLocation;
+
+
+        }
+
+
+        #region Get COORDINATES
+
+        private void getCoordinates()
+        {
+            #region Generate coordinates(Get from webservice)
+
+            //GeoCoordinate l1 = new GeoCoordinate(53, 73);
+            //GeoCoordinate l2 = new GeoCoordinate(14, 120);
+            //GeoCoordinate l3 = new GeoCoordinate(48, 133);
+            //GeoCoordinate l4 = new GeoCoordinate(2, 11);
+            //GeoCoordinate l5 = new GeoCoordinate(0, 40);
+
+            //Model.Location lq = new Model.Location();
+            //lq.Coordinate = l1;
+            //Model.Location lw = new Model.Location();
+            //lw.Coordinate = l2;
+            //Model.Location le = new Model.Location();
+            //le.Coordinate = l3;
+            //Model.Location lr = new Model.Location();
+            //lr.Coordinate = l4;
+            //Model.Location lt = new Model.Location();
+            //lt.Coordinate = l5;
+
+            //DiseaseLocations.Add(lq);
+            //DiseaseLocations.Add(lw);
+            //DiseaseLocations.Add(le);
+            //DiseaseLocations.Add(lr);
+            //DiseaseLocations.Add(lt);
+
+            string baseUri = "http://ws.sikbug.com/sicknesses_users.json?sicknesses_user[latitude]={0}&sicknesses_user[longitude]={1}&radius={2}&api_key=58cd8fd4-85ff-4b0a-9e26-eb4466db2e19";
+
+            //Call method to get current location
+            //hardcoding to be removed ***
+
+            double lat = 12.92;
+            double lon = 77.61;
+            double radius = 10;
+
+
+            string requestUri = string.Format(baseUri, lat.ToString(), lon.ToString(), radius.ToString());
+
+
+            WebClient clientRequest = new WebClient();
+            clientRequest.DownloadStringCompleted += new DownloadStringCompletedEventHandler(clientRequest_DownloadStringCompleted);
+            clientRequest.DownloadStringAsync(new Uri(requestUri));
+
+
+            #endregion
+
+
+
+        }
+
+        void clientRequest_DownloadStringCompleted(object sender, DownloadStringCompletedEventArgs e)
+        {
+
+            string Jsonresult = e.Result;
+
+            // convert string to stream
+            byte[] byteArray = Encoding.UTF8.GetBytes(Jsonresult);
+
+            // convert stream to string
+            MemoryStream stream = new MemoryStream(byteArray);
+
+            System.Runtime.Serialization.Json.DataContractJsonSerializer sez = new System.Runtime.Serialization.Json.DataContractJsonSerializer(typeof(List<JsonSickness>));
+
+            List<JsonSickness> users = new List<JsonSickness>();
+            users = (List<JsonSickness>)sez.ReadObject(stream);
+
+
+
+            foreach (JsonSickness usr in users)
+            {
+                double latitude = Double.Parse(usr.sicknesses_user.latitude);
+                double longitude = Double.Parse(usr.sicknesses_user.longitude);
+
+                GeoCoordinate coordinate = new GeoCoordinate(latitude, longitude);
+
+                Model.Location location = new Model.Location();
+                location.Coordinate = coordinate;
+
+                location.DiseaseString = usr.sicknesses_user.sickness.sick;
+
+                string[] sickness = usr.sicknesses_user.sickness.sick.Split(',');
+
+                foreach (string strDisease in sickness)
+                    location.LocationDiseases.Add(strDisease);
+
+                
+
+                DiseaseLocations.Add(location);
+            }
+
+
+            //Get from Util Current Locn
+            //hardcoding to be removed ***
+            GeoCoordinate currentLoc = new GeoCoordinate(12.9, 77.6);
+
+            Model.Location CurrentLoc = new Model.Location();
+            CurrentLoc.Coordinate = currentLoc;
+            CurrentLoc.type = "Loc";
+
+            mapSikbug.Center = CurrentLoc.Coordinate;
+            CurrentLocation.Add(CurrentLoc);
+        }
+
+        
+        
+        #endregion
+
+        private void Pushpin_MouseEnter(object sender, MouseEventArgs e)
+        {
+            Microsoft.Phone.Controls.Maps.Pushpin selectedPushpin = (sender as Microsoft.Phone.Controls.Maps.Pushpin);
+            Model.Location locn = selectedPushpin.DataContext as Model.Location;
+
+
+            if (locn.type == null)
+            {
+                var about = new Coding4FunAboutPrompt();
+                about.Show(locn.DiseaseString.ToString());
+
+                //if (pushPinLayer.Children.Contains(pushPinItemPopUp))
+                //{
+                //    pushPinLayer.Children.Remove(pushPinItemPopUp);
+                //    //pushPinItemPopUp.ItemsSource = null;
+                //    //pushPinItemPopUp.ItemTemplate = null;
+                //}
+
+                //pushPinItemPopUp.ItemTemplate = dataTempPopup;
+                //pushPinItemPopUp.ItemsSource = DiseaseLocations;
+
+                //pushPinLayer.Visibility = Visibility.Visible;
+
+                //pushPinLayer.AddChild(pushPinItemPopUp, new GeoCoordinate(selectedPushpin.Location.Latitude,selectedPushpin.Location.Longitude));
+
+            }
+            else
+            {
+                //if (pushPinLayer.Children.Contains(pushPinItemPopUp))
+                //    pushPinLayer.Children.Remove(pushPinItemPopUp);
+            
+            }
+        }
+
+       
+        private void TextBlock_MouseEnter(object sender, MouseEventArgs e)
+        {
+            NavigationService.Navigate(new Uri("/View/SicknessAroundMe.xaml", UriKind.RelativeOrAbsolute));
+        }
+
+        private void txxSearchBox_MouseEnter(object sender, MouseEventArgs e)
+        {
+            TextBox txbAddress = sender as TextBox;
+            txbAddress.Text = "";
+        }
+
+        private void txxSearchBox_MouseLeave(object sender, MouseEventArgs e)
+        {
+            TextBox txbAddress = sender as TextBox;
+            if (txbAddress.Text.ToString().Trim().Equals(string.Empty) || txbAddress.Text.ToString().Trim().Equals(""))
+            {
+                txbAddress.Text = "Search City, Zip etc...";
+            }
+
+        }
+
+
+
+
+       
+    }
+
+    #region GOOGLE MAP DISPLAY
+
+    public enum GoogleTileTypes
+    {
+        Hybrid,
+        Physical,
+        Street,
+        Satellite,
+        WaterOverlay
+    }
+
+    public class GoogleTile : Microsoft.Phone.Controls.Maps.TileSource
+    {
+        private int _server;
+        private char _mapmode;
+        private GoogleTileTypes _tiletypes;
+
+        public GoogleTileTypes TileTypes
+        {
+            get { return _tiletypes; }
+            set
+            {
+                _tiletypes = value;
+                MapMode = MapModeConverter(value);
+            }
+        }
+
+        public char MapMode
+        {
+            get { return _mapmode; }
+            set { _mapmode = value; }
+        }
+
+        public int Server
+        {
+            get { return _server; }
+            set { _server = value; }
+        }
+
+        public GoogleTile()
+        {
+            UriFormat = @"http://mt{0}.google.com/vt/lyrs={1}&z={2}&x={3}&y={4}";
+            Server = 0;
+        }
+
+        public override Uri GetUri(int x, int y, int zoomLevel)
+        {
+            if (zoomLevel > 0)
+            {
+                var Url = string.Format(UriFormat, Server, MapMode, zoomLevel, x, y);
+                return new Uri(Url);
+            }
+            return null;
+        }
+
+        private char MapModeConverter(GoogleTileTypes tiletype)
+        {
+            switch (tiletype)
+            {
+                case GoogleTileTypes.Hybrid:
+                    {
+                        return 'y';
+                    }
+                case GoogleTileTypes.Physical:
+                    {
+                        return 't';
+                    }
+                case GoogleTileTypes.Satellite:
+                    {
+                        return 's';
+                    }
+                case GoogleTileTypes.Street:
+                    {
+                        return 'm';
+                    }
+                case GoogleTileTypes.WaterOverlay:
+                    {
+                        return 'r';
+                    }
+            }
+            return ' ';
+        }
+    }
+} 
+    #endregion
+   

@@ -1,0 +1,60 @@
+﻿<phone:PhoneApplicationPage 
+    x:Class="Sikbug.View.ShareSikbug"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:phone="clr-namespace:Microsoft.Phone.Controls;assembly=Microsoft.Phone"
+    xmlns:shell="clr-namespace:Microsoft.Phone.Shell;assembly=Microsoft.Phone"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    FontFamily="{StaticResource PhoneFontFamilyNormal}"
+    FontSize="{StaticResource PhoneFontSizeNormal}"
+    Foreground="{StaticResource PhoneForegroundBrush}"
+    SupportedOrientations="Portrait" Orientation="Portrait"
+    mc:Ignorable="d" d:DesignHeight="768" d:DesignWidth="480"
+    shell:SystemTray.IsVisible="True">
+
+    <!--LayoutRoot is the root grid where all page content is placed-->
+    <Grid x:Name="LayoutRoot" Background="#FF56574F">
+        <Grid x:Name="ContentPanel" Background="#FFC4C5BF" Margin="0,100,0,0">
+            <TextBlock Text="Share Sikbug:" Padding="25,25,0,15" FontSize="32" Foreground="DarkGray" FontFamily="Calibri" FontWeight="Bold" Margin="0,0,254,573"></TextBlock>
+            <Image Name="imgShareType" Source="/Sikbug;component/Resources/Images/Logos/mail.png" Height="90" Width="140" Margin="218,6,122,572" Visibility="Collapsed"></Image>
+            <ListBox HorizontalAlignment="Left" Margin="0,80,0,0" Name="lsbShare" VerticalAlignment="Top" Width="480" SelectionChanged="lsbShare_SelectionChanged">
+                
+                <ListBox.ItemContainerStyle>
+                    <Style TargetType="ListBoxItem">
+                        <Setter Property="Template">
+                            <Setter.Value>
+                                <ControlTemplate TargetType="ListBoxItem">
+                                    <Border BorderBrush="LightGray" BorderThickness="1" Padding="4">
+                                        <ContentPresenter />
+                                    </Border>
+                                </ControlTemplate>
+                            </Setter.Value>
+                        </Setter>
+                    </Style>
+                </ListBox.ItemContainerStyle>
+                <ListBoxItem>
+                    <StackPanel Orientation="Horizontal">
+                        <Image Name="imgMail" Source="/Sikbug;component/Resources/Images/Logos/mail.png" Height="90" Width="140"></Image>
+                        <TextBlock Text="EMAIL" Padding="20,5,0,5" FontSize="36" Foreground="#FF99B61C" FontFamily="Calibri" FontWeight="Bold"></TextBlock>                       
+                    </StackPanel>                  
+                </ListBoxItem>
+                <ListBoxItem>
+                    <StackPanel Orientation="Horizontal">
+                        <Image Name="imgFacebook" Height="90" Width="140" Source="/Sikbug;component/Resources/Images/Logos/facebook.png"></Image>
+                        <TextBlock Text="FACEBOOK" Padding="20,5,0,5" FontSize="36" Foreground="#FF99B61C" FontFamily="Calibri" FontWeight="Bold"></TextBlock>
+                    </StackPanel>
+                </ListBoxItem>
+                <ListBoxItem>
+                    <StackPanel Orientation="Horizontal">
+                        <Image Name="imgTwitter" Height="90" Width="140" Source="/Sikbug;component/Resources/Images/Logos/twitter.png"></Image>
+                        <TextBlock Text="TWITTER" Padding="20,5,0,5" FontSize="36" Foreground="#FF99B61C" FontFamily="Calibri" FontWeight="Bold"></TextBlock>
+                    </StackPanel>
+                </ListBoxItem>
+            </ListBox>
+            <TextBox Name="txtComment" Margin="0,100,0,237" TextWrapping="Wrap" Visibility="Collapsed" />
+            <TextBlock x:Name="CharactersCountTextBlock"  Margin="120,434,130,0" HorizontalAlignment="Center" Text="140 characters remaining" VerticalAlignment="Top" Visibility="Collapsed" />
+        </Grid>
+    </Grid>
+ 
+</phone:PhoneApplicationPage>

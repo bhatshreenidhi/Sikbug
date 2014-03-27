@@ -1,0 +1,78 @@
+﻿using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Net;
+using System.Windows;
+using System.Windows.Controls;
+using System.Windows.Documents;
+using System.Windows.Input;
+using System.Windows.Media;
+using System.Windows.Media.Animation;
+using System.Windows.Shapes;
+using Microsoft.Phone.Controls;
+
+namespace Sikbug.View
+{
+    public partial class ShareSikbug : PhoneApplicationPage
+    {
+        private bool _isCommentOpen = false;
+        public ShareSikbug()
+        {
+            InitializeComponent();
+            BackKeyPress += new EventHandler<System.ComponentModel.CancelEventArgs>(ShareSikbug_BackKeyPress);
+        }
+
+        void ShareSikbug_BackKeyPress(object sender, System.ComponentModel.CancelEventArgs e)
+        {
+            if (!_isCommentOpen)
+            {
+                return;
+            }
+            e.Cancel = true;
+            commentVisible(false);
+            
+        }
+       
+        private void lsbShare_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            
+            int selectedIndex = lsbShare.SelectedIndex;
+            switch (selectedIndex)
+            {
+                case 0: 
+                        lsbShare.SelectedIndex = -1;
+                        imgShareType.Source = imgMail.Source;
+                        commentVisible(true);
+                        break;
+                case 1: 
+                        lsbShare.SelectedIndex = -1;
+                        imgShareType.Source = imgFacebook.Source;
+                        commentVisible(true);break;
+                case 2: 
+                        lsbShare.SelectedIndex = -1;
+                        imgShareType.Source = imgTwitter.Source;
+                        commentVisible(true);break;
+                default: commentVisible(false);
+                    break;
+            }
+        }
+
+        private void commentVisible(bool isVisible)
+        {
+            if (isVisible)
+            {
+                lsbShare.Visibility = Visibility.Collapsed;
+                imgShareType.Visibility = Visibility.Visible;
+                txtComment.Visibility = Visibility.Visible;
+                _isCommentOpen = true;
+            }
+            else
+            {
+                imgShareType.Visibility = Visibility.Collapsed;
+                txtComment.Visibility = Visibility.Collapsed;
+                lsbShare.Visibility = Visibility.Visible;
+                _isCommentOpen = false;
+            }
+        }
+    }
+}

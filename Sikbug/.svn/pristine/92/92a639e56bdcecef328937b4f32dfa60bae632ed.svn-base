@@ -1,0 +1,93 @@
+﻿<phone:PhoneApplicationPage 
+    x:Class="Sikbug.View.PostSickness"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:phone="clr-namespace:Microsoft.Phone.Controls;assembly=Microsoft.Phone"
+    xmlns:shell="clr-namespace:Microsoft.Phone.Shell;assembly=Microsoft.Phone"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    FontFamily="{StaticResource PhoneFontFamilyNormal}"
+    FontSize="{StaticResource PhoneFontSizeNormal}"
+    Foreground="{StaticResource PhoneForegroundBrush}"
+    SupportedOrientations="PortraitOrLandscape" Orientation="Portrait"
+    mc:Ignorable="d" d:DesignHeight="768" d:DesignWidth="480"
+    shell:SystemTray.IsVisible="True" Loaded='PhoneApplicationPage_Loaded'>
+
+    <!--LayoutRoot is the root grid where all page content is placed-->
+    <Grid x:Name="LayoutRoot" Background="Transparent">
+
+        <Grid Name="grdMain" Background="Transparent">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="160"/>
+                <RowDefinition Height="*"/>
+            </Grid.RowDefinitions>
+
+        <!-- This is the title grid containing a button and title-->
+            <Grid Name="grdTitle" Grid.Row="0">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="170"/>
+                </Grid.RowDefinitions>
+
+                <StackPanel x:Name="TitlePanel" Grid.Row="0" Margin="12,17,0,28">
+                    <TextBlock x:Name="ApplicationTitle" Text="SIKBUG" Style="{StaticResource PhoneTextNormalStyle}"/>
+                    <TextBlock x:Name="PageTitle" Text="Report Sickness" Margin="9,-7,0,0" Style="{StaticResource PhoneTextTitle1Style}" FontSize='64'/>
+                </StackPanel>
+            </Grid>
+
+            <!-- This is the title grid for contents-->
+            <Grid Name="grdContent" Grid.Row="1">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="70"/>
+                    <RowDefinition Height="70"/>
+                    <RowDefinition Height="250"/>
+                    <RowDefinition Height="50"/>
+                    <RowDefinition Height="70" />
+                    <RowDefinition Height="70" />
+                </Grid.RowDefinitions>
+
+                <TextBlock Name="txbWelcome" Style="{StaticResource PhoneTextNormalStyle}" Text="Welcome" Grid.Row="0" HorizontalAlignment="Stretch" Margin="30,10,-1,-1" FontSize="28"></TextBlock>
+                <TextBlock Name="txbLocation" Style="{StaticResource PhoneTextNormalStyle}" Text="Location :" Grid.Row="1" HorizontalAlignment="Stretch" Margin="10,20,-1,-1"></TextBlock>
+                <TextBox Name="txtDescription" Grid.Row="1" Text="I am sick" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" Background="Transparent" Foreground="White" TextWrapping="Wrap" Margin="0,69,0,1" Grid.RowSpan="2" />
+                <TextBlock Name="txbShareMessage" Style="{StaticResource PhoneTextNormalStyle}" Text="Share on facebook and Twitter about sickness" Grid.Row="3" HorizontalAlignment="Stretch" Margin="30,5,-1,-1"></TextBlock>
+                
+                <!-- Grid for placing logos-->
+                <Grid Name="grdImageGrid" Grid.Row="4">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="70"/>
+                    </Grid.RowDefinitions>
+
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="240"/>
+                        <ColumnDefinition Width="*"/>
+                    </Grid.ColumnDefinitions>
+                    
+                    <Image Name="imgTwitter" Grid.Column="0" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" Source="/Sikbug;component/Resources/Images/Logos/facebook.png"></Image>
+                    <Image Name="imgFacebook" Grid.Column="1" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" Source="/Sikbug;component/Resources/Images/Logos/twitter.png"></Image>
+                    
+                </Grid>
+                
+                <Button Name="btnSubmit" Content="Submit" Grid.Row="5" HorizontalAlignment="Center" VerticalAlignment="Center"></Button>
+            </Grid>
+         </Grid>
+
+
+
+        <!--<Grid Name="grdMain" Background="Transparent">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="100"/>
+                <RowDefinition Height="*"/>
+            </Grid.RowDefinitions>
+        </Grid>-->
+        <!--Sample code showing usage of ApplicationBar-->
+        <!--<phone:PhoneApplicationPage.ApplicationBar>
+        <shell:ApplicationBar IsVisible="True" IsMenuEnabled="True">
+            <shell:ApplicationBarIconButton IconUri="/Images/appbar_button1.png" Text="Button 1"/>
+            <shell:ApplicationBarIconButton IconUri="/Images/appbar_button2.png" Text="Button 2"/>
+            <shell:ApplicationBar.MenuItems>
+                <shell:ApplicationBarMenuItem Text="MenuItem 1"/>
+                <shell:ApplicationBarMenuItem Text="MenuItem 2"/>
+            </shell:ApplicationBar.MenuItems>
+        </shell:ApplicationBar>
+    </phone:PhoneApplicationPage.ApplicationBar>-->
+    </Grid>
+</phone:PhoneApplicationPage>

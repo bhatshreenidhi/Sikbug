@@ -1,0 +1,172 @@
+﻿using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Net;
+using System.Windows;
+using System.Windows.Controls;
+using System.Windows.Documents;
+using System.Windows.Input;
+using System.Windows.Media;
+using System.Windows.Media.Animation;
+using System.Windows.Shapes;
+using Microsoft.Phone.Controls;
+using Sikbug.Helpers;
+using Microsoft.Phone.Shell;
+using Sikbug.Utils;
+
+namespace Sikbug.View
+{
+    public partial class ShareSikbug : PhoneApplicationPage
+    {
+        private bool _isCommentOpen = false;
+        private Sikbug.Helpers.TwitterAccess _twitterSettings;
+        public ShareSikbug()
+        {
+            InitializeComponent();
+            BackKeyPress += new EventHandler<System.ComponentModel.CancelEventArgs>(ShareSikbug_BackKeyPress);
+        }
+
+        void ShareSikbug_BackKeyPress(object sender, System.ComponentModel.CancelEventArgs e)
+        {
+            if (!_isCommentOpen)
+            {
+                return;
+            }
+            e.Cancel = true;
+            commentVisible(false);
+
+        }
+
+        private void lsbShare_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+
+            int selectedIndex = lsbShare.SelectedIndex;
+            switch (selectedIndex)
+            {
+                case 0:
+                    lsbShare.SelectedIndex = -1;
+                    imgShareType.Source = imgMail.Source;
+                    commentVisible(true);
+                    break;
+                case 1:
+                    lsbShare.SelectedIndex = -1;
+                    imgShareType.Source = imgFacebook.Source;
+                    commentVisible(true); break;
+                case 2:
+                    lsbShare.SelectedIndex = -1;
+                    _twitterSettings = IsolatedStorage.LoadSetting<TwitterAccess>(TwitterSettings.TwitterAccess);
+                    if (_twitterSettings == null)
+                    {
+                        MessageBox.Show("You are not currently logged in to twitter");
+                        break;
+                    }
+                    imgShareType.Source = imgTwitter.Source;
+                    commentVisible(true);
+                    CreateApplicationBar();
+                    UpdateRemainingCharacters();
+                    LoadTwitterUI();
+                    break;
+                default: commentVisible(false);
+                    break;
+            }
+        }
+
+        private void LoadTwitterUI()
+        {
+            ((ApplicationBarIconButton)ApplicationBar.Buttons[0]).IsEnabled = !String.IsNullOrEmpty(_twitterSettings.AccessToken) && !String.IsNullOrEmpty(_twitterSettings.AccessTokenSecret);
+        }
+
+        private void commentVisible(bool isVisible)
+        {
+            if (isVisible)
+            {
+                lsbShare.Visibility = Visibility.Collapsed;
+                imgShareType.Visibility = Visibility.Visible;
+                txtComment.Visibility = Visibility.Visible;
+                _isCommentOpen = true;
+            }
+            else
+            {
+                imgShareType.Visibility = Visibility.Collapsed;
+                txtComment.Visibility = Visibility.Collapsed;
+                lsbShare.Visibility = Visibility.Visible;
+                _isCommentOpen = false;
+            }
+        }
+
+        private void UpdateRemainingCharacters()
+        {
+            CharactersCountTextBlock.Text = String.Format("{0} characters remaining", 140 - txtComment.Text.Length);
+        }
+
+        private void TweetTextBoxTextChanged(object sender, TextChangedEventArgs e)
+        {
+            UpdateRemainingCharacters();
+        }
+
+        private void MessageTextBoxKeyUp(object sender, KeyEventArgs e)
+        {
+            if (e.Key == Key.Enter)
+            {
+                Focus();
+            }
+        }
+
+        #region ApplicationBar
+
+        private void CreateApplicationBar()
+        {
+            ApplicationBar = new ApplicationBar { IsMenuEnabled = true, IsVisible = true, Opacity = .9 };
+
+            var save = new ApplicationBarIconButton(new Uri("/Resources/Images/check.png", UriKind.Relative));
+            save.Text = "tweet";
+            save.Click += SaveClick;
+            save.IsEnabled = false;
+
+            var cancel = new ApplicationBarIconButton(new Uri("/Resources/Images/cancel.png", UriKind.Relative));
+            cancel.Text = "cancel";
+            cancel.Click += CancelClick;
+
+            ApplicationBar.Buttons.Add(save);
+            ApplicationBar.Buttons.Add(cancel);
+        }
+
+        private void CancelClick(object sender, EventArgs e)
+        {
+            if (NavigationService.CanGoBack)
+                NavigationService.GoBack();
+        }
+        private void SaveClick(object sender, EventArgs e)
+        {
+            PostTweet();
+        }
+
+        #endregion
+        private void PostTweet()
+        {
+            if (String.IsNullOrEmpty(txtComment.Text))
+                return;
+
+            //***Progress bar visible
+
+            var twitter = new TwitterHelper(_twitterSettings);
+
+            // Successful event handler, navigate back if successful
+            twitter.TweetCompletedEvent += (sender, e) =>
+            {
+                //***Progress bar collapse
+                if (NavigationService.CanGoBack)
+                    NavigationService.GoBack();
+            };
+
+            // Failed event handler, show error
+            twitter.ErrorEvent += (sender, e) =>
+            {
+                //***Progress bar collapse
+                MessageBox.Show("There was an error connecting to Twitter");
+            };
+
+            twitter.NewTweet(txtComment.Text);
+        }
+    }
+}

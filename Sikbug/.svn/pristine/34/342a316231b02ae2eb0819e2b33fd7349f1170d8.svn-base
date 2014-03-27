@@ -1,0 +1,110 @@
+﻿using System;
+using System.Net;
+using System.Windows;
+using System.Windows.Controls;
+using System.Windows.Documents;
+using System.Windows.Ink;
+using System.Windows.Input;
+using System.Windows.Media;
+using System.Windows.Media.Animation;
+using System.Windows.Shapes;
+using System.Text;
+using System.IO;
+using System.Collections.Generic;
+using Sikbug.Model;
+using System.Diagnostics;using System.Xml.Linq;
+using System.Linq;
+
+namespace Sikbug.Services
+{
+    public class AroundMeService
+    {
+        WebClient clientRequest;
+        public delegate void SicknessWithCoordinatesDelegate(List<JsonSickness> sicknessList);
+        public event SicknessWithCoordinatesDelegate SicknessWithCoordinatesFinished;
+
+        public delegate void GeoCodingDelegate(List<string> latLongList);
+        public event GeoCodingDelegate downloadCoordinateFinished;
+
+        //radius should be passed zero if default feature is to be initiated
+        public void GetSicknesses(double latitude, double longitude, double radius)
+        {
+            //default radius 20 miles in sikbug server
+            
+            string requestUri;
+            if (radius != 0)
+                requestUri = "http://ws.sikbug.com/sicknesses_users.json?sicknesses_user[latitude]=" + latitude + "&sicknesses_user[longitude]=" + longitude + "&radius=" + radius + "&api_key=" + App._APIKey;
+            else
+                requestUri = "http://ws.sikbug.com/sicknesses_users.json?sicknesses_user[latitude]=" + latitude + "&sicknesses_user[longitude]=" + longitude + "&api_key=" + App._APIKey;
+
+            clientRequest = new WebClient();
+            clientRequest.DownloadStringCompleted += new DownloadStringCompletedEventHandler(clientRequest_DownloadStringCompleted);
+            clientRequest.DownloadStringAsync(new Uri(requestUri));
+        }
+
+        void clientRequest_DownloadStringCompleted(object sender, DownloadStringCompletedEventArgs e)
+        {
+            try
+            {
+                string Jsonresult = e.Result;
+                byte[] byteArray = Encoding.UTF8.GetBytes(Jsonresult);
+                MemoryStream stream = new MemoryStream(byteArray);
+                System.Runtime.Serialization.Json.DataContractJsonSerializer sez = new System.Runtime.Serialization.Json.DataContractJsonSerializer(typeof(List<JsonSickness>));
+
+                List<JsonSickness> sicknessList = new List<JsonSickness>();
+
+                sicknessList = (List<JsonSickness>)sez.ReadObject(stream);
+               
+                SicknessWithCoordinatesFinished(sicknessList);
+            }
+            catch(Exception ex)
+            {
+                Debug.WriteLine("Exception is : " + ex.Message);
+                SicknessWithCoordinatesFinished(null);
+            }
+        }
+
+
+        public void GetLocationCoordinates(string address)
+        {
+            //default radius 20 miles in sikbug server
+
+            string requestUri;
+            
+                requestUri = "http://maps.googleapis.com/maps/api/geocode/xml?address=" + address + "&sensor=false";
+
+
+                WebClient clientRequestCoordinates = new WebClient();
+                clientRequestCoordinates.DownloadStringCompleted += new DownloadStringCompletedEventHandler(clientRequestCoordinates_DownloadStringCompleted);
+                clientRequestCoordinates.DownloadStringAsync(new Uri(requestUri));
+            
+        }
+
+        void clientRequestCoordinates_DownloadStringCompleted(object sender, DownloadStringCompletedEventArgs e)
+        {
+            string result = e.Result;
+            string latitude = "";
+            string longitude = "";
+            XElement xmlDoc = XElement.Parse(result);
+            string Status = xmlDoc.Element("status").Value;           
+
+            if(Status.Equals("OK"))
+            {
+
+               latitude = xmlDoc.Element("result").Element("geometry").Element("location").Element("lat").Value;
+               longitude = xmlDoc.Element("result").Element("geometry").Element("location").Element("lng").Value;           
+            }
+
+            List<string> strList = new List<string>();
+            strList.Add(latitude);
+            strList.Add(longitude);
+
+            downloadCoordinateFinished(strList);
+
+
+        }
+
+
+
+    }
+}

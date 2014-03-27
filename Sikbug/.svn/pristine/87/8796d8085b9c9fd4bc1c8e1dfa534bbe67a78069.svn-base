@@ -1,0 +1,96 @@
+﻿using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Net;
+using System.Windows;
+using System.Windows.Controls;
+using System.Windows.Documents;
+using System.Windows.Input;
+using System.Windows.Media;
+using System.Windows.Media.Animation;
+using System.Windows.Shapes;
+using Microsoft.Phone.Controls;
+using System.Device.Location;
+using System.Collections.ObjectModel;
+using System.Windows.Navigation;
+
+namespace Sikbug.View
+{
+    public partial class AddFavourite : PhoneApplicationPage
+    {
+        public ObservableCollection<Model.Location> CurrentLocation = new ObservableCollection<Model.Location>();
+
+        //Adding a pushpin layer along with the popUP
+        Microsoft.Phone.Controls.Maps.MapLayer pushPinLayer = new Microsoft.Phone.Controls.Maps.MapLayer();
+
+
+        //Add a mapItemControl for binding pushpins on to the MAP
+        Microsoft.Phone.Controls.Maps.MapItemsControl pushPinItemLoc = new Microsoft.Phone.Controls.Maps.MapItemsControl();
+
+        protected override void OnNavigatedTo(NavigationEventArgs e)
+        {
+            
+        }
+       
+
+        public AddFavourite()
+        {
+            InitializeComponent();
+            GeoCoordinate currentLoc = new GeoCoordinate(12.9, 77.6);
+            renderMap(currentLoc);
+
+        }
+
+        private void renderMap(GeoCoordinate currentLoc)
+        {
+
+            Model.Location CurrentLoc = new Model.Location();
+            CurrentLoc.Coordinate = currentLoc;
+            CurrentLoc.type = "Loc";
+
+            mapSikbug.Center = CurrentLoc.Coordinate;
+            CurrentLocation.Add(CurrentLoc);
+
+            if (mapSikbug.Children.Contains(pushPinItemLoc))
+                mapSikbug.Children.Remove(pushPinItemLoc);
+
+            mapSikbug.Children.Add(pushPinItemLoc);
+
+           
+            pushPinItemLoc.Visibility = Visibility.Visible;
+
+            pushPinItemLoc.ItemTemplate = dataTemplatePushpin;
+            pushPinItemLoc.ItemsSource = CurrentLocation;
+        }
+
+        private void txxSearchBox_MouseEnter(object sender, MouseEventArgs e)
+        {
+            TextBox txbAddress = sender as TextBox;
+            txbAddress.Text = "";
+        }
+
+        private void txxSearchBox_MouseLeave(object sender, MouseEventArgs e)
+        {
+            TextBox txbAddress = sender as TextBox;
+            if (txbAddress.Text.ToString().Trim().Equals(string.Empty) || txbAddress.Text.ToString().Trim().Equals(""))
+            {
+                txbAddress.Text = "Search City, Zip etc...";
+            }
+
+        }
+
+        private void ApplicationBarIconButton_Click(object sender, EventArgs e)
+        {
+           GeoCoordinate cor = DraggablePushpin.newLocation;
+           stkInput.Visibility = Visibility.Visible;
+        }
+
+       
+        private void inputPrompt_Completed(object sender, Coding4Fun.Phone.Controls.PopUpEventArgs<string, Coding4Fun.Phone.Controls.PopUpResult> e)
+        {
+            string str = inputPrompt.Value;
+            stkInput.Visibility = Visibility.Collapsed;
+            inputPrompt.Value = "";
+        }
+    }
+}

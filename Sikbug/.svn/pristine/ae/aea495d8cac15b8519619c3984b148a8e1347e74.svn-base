@@ -1,0 +1,280 @@
+﻿using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Net;
+using System.Windows;
+using System.Windows.Controls;
+using System.Windows.Documents;
+using System.Windows.Input;
+using System.Windows.Media;
+using System.Windows.Media.Animation;
+using System.Windows.Shapes;
+using Microsoft.Phone.Controls;
+using Facebook;
+using Hammock.Authentication.OAuth;
+using Sikbug.Helpers;
+using Hammock;
+using System.Windows.Navigation;
+using Sikbug.Utils;
+
+namespace Sikbug.View
+{
+    public partial class Login : PhoneApplicationPage
+    {
+        public static string loginType = null;
+
+        //Facebook
+        private readonly Uri _loginUrl;
+
+        //Twitter
+        private string _oAuthTokenSecret;
+        private string _oAuthToken;
+        public Login()
+        {
+            if (loginType == "Facebook")
+            {
+                var oauthClient = new FacebookOAuthClient { AppId = Helpers.FacebookSettings.AppId };
+                var loginParameters = new Dictionary<string, object>();
+                loginParameters["response_type"] = "code";
+                if (!string.IsNullOrEmpty(Helpers.FacebookSettings.ExtendedPermissions))
+                {
+                    loginParameters["scope"] = Helpers.FacebookSettings.ExtendedPermissions;
+                }
+                _loginUrl = oauthClient.GetLoginUrl(loginParameters);
+            }
+            else if (loginType == "Twitter")
+            {
+            }
+            InitializeComponent();
+        }
+
+        protected override void OnNavigatedTo(NavigationEventArgs e)
+        {
+            stkLoading.Visibility = Visibility.Visible;
+            if (loginType == "Twitter")
+            {
+                GetTwitterToken();                
+            }
+            else if (loginType == "Facebook")
+            {
+                webBrowser.Navigate(_loginUrl);
+            }
+        }
+
+        private void webBrowser_Navigated(object sender, NavigationEventArgs e)
+        {
+            if (loginType == "Twitter")
+            {
+                stkLoading.Visibility = Visibility.Collapsed;
+            }
+
+            else if (loginType == "Facebook")
+            {
+                FacebookOAuthResult oauthResult;
+                stkLoading.Visibility = Visibility.Collapsed;
+                if (FacebookOAuthResult.TryParse(e.Uri, out oauthResult))
+                {
+                    stkLoading.Visibility = Visibility.Visible;
+                    webBrowser.Visibility = Visibility.Collapsed;
+                    stkMain.VerticalAlignment = VerticalAlignment.Center;
+                    // The url is the result of OAuth 2.0 authentication.
+                    if (oauthResult.IsSuccess)
+                    {
+                        var oauthClient = new FacebookOAuthClient { AppId = Helpers.FacebookSettings.AppId, AppSecret = Helpers.FacebookSettings.AppSecret };
+
+                        // we got the code here
+                        var code = oauthResult.Code;
+                        oauthClient.ExchangeCodeForAccessTokenCompleted +=
+                            (o, args) =>
+                            {
+                                // make sure to check that no error has occurred.
+                                if (args.Error != null)
+                                {
+                                    // make sure to access ui stuffs on the correct thread.
+                                    Dispatcher.BeginInvoke(
+                                        () =>
+                                        {
+                                            stkLoading.Visibility = Visibility.Collapsed;
+                                            MessageBox.Show(args.Error.Message);
+                                            NavigationService.Navigate(new Uri("/View/Home.xaml", UriKind.Relative));
+                                        });
+                                }
+                                else
+                                {
+                                    var result = (IDictionary<string, object>)args.GetResultData();
+
+                                    Helpers.FacebookSettings.AccessToken = (string)result["access_token"];
+                                    // make sure to access ui stuffs on the correct thread.
+                                    Dispatcher.BeginInvoke(() =>
+                                    {
+                                        stkLoading.Visibility = Visibility.Collapsed;
+                                        NavigationService.Navigate(new Uri("/View/FacebookInfoPage.xaml", UriKind.Relative));
+                                    });
+                                }
+                            };
+
+                        oauthClient.ExchangeCodeForAccessTokenAsync(code);
+                    }
+                    else
+                    {
+                        // the user clicked don't allow or some other error occurred.
+                        MessageBox.Show(oauthResult.ErrorDescription);
+                    }
+                }
+                else
+                {
+                    // The url is NOT the result of OAuth 2.0 authentication.
+                }
+            }
+        }
+
+        private void webBrowser_Navigating(object sender, NavigatingEventArgs e)
+        {
+            if (loginType == "Twitter")
+            {
+                stkLoading.Visibility = Visibility.Visible;
+
+                if (e.Uri.AbsoluteUri.CompareTo("https://api.twitter.com/oauth/authorize") == 0)
+                {
+                    stkLoading.Visibility = Visibility.Visible;
+                }
+
+                if (!e.Uri.AbsoluteUri.Contains(TwitterSettings.CallbackUri))
+                    return;
+
+                e.Cancel = true;
+
+                var arguments = e.Uri.AbsoluteUri.Split('?');
+                if (arguments.Length < 1)
+                    return;
+
+                GetAccessToken(arguments[1]);
+            }
+        }
+
+        private void GetTwitterToken()
+        {
+            var credentials = new OAuthCredentials
+            {
+                Type = OAuthType.RequestToken,
+                SignatureMethod = OAuthSignatureMethod.HmacSha1,
+                ParameterHandling = OAuthParameterHandling.HttpAuthorizationHeader,
+                ConsumerKey = TwitterSettings.ConsumerKey,
+                ConsumerSecret = TwitterSettings.ConsumerKeySecret,
+                Version = TwitterSettings.OAuthVersion,
+                CallbackUrl = TwitterSettings.CallbackUri
+            };
+
+            var client = new RestClient
+            {
+                Authority = "https://api.twitter.com/oauth",
+                Credentials = credentials,
+                HasElevatedPermissions = true
+            };
+
+            var request = new RestRequest
+            {
+                Path = "/request_token"
+            };
+            client.BeginRequest(request, new RestCallback(TwitterRequestTokenCompleted));
+        }
+
+        private void TwitterRequestTokenCompleted(RestRequest request, RestResponse response, object userstate)
+        {
+            _oAuthToken = GetQueryParameter(response.Content, "oauth_token");
+            _oAuthTokenSecret = GetQueryParameter(response.Content, "oauth_token_secret");
+            var authorizeUrl = TwitterSettings.AuthorizeUri + "?oauth_token=" + _oAuthToken;
+
+            if (String.IsNullOrEmpty(_oAuthToken) || String.IsNullOrEmpty(_oAuthTokenSecret))
+            {
+                Dispatcher.BeginInvoke(() => MessageBox.Show("error calling twitter"));
+                return;
+            }
+
+            Dispatcher.BeginInvoke(() => webBrowser.Navigate(new Uri(authorizeUrl)));
+        }
+
+        private static string GetQueryParameter(string input, string parameterName)
+        {
+            foreach (string item in input.Split('&'))
+            {
+                var parts = item.Split('=');
+                if (parts[0] == parameterName)
+                {
+                    return parts[1];
+                }
+            }
+            return String.Empty;
+        }
+
+        private void GetAccessToken(string uri)
+        {
+            var requestToken = GetQueryParameter(uri, "oauth_token");
+            if (requestToken != _oAuthToken)
+            {
+                MessageBox.Show("Twitter auth tokens don't match");
+            }
+
+            var requestVerifier = GetQueryParameter(uri, "oauth_verifier");
+
+            var credentials = new OAuthCredentials
+            {
+                Type = OAuthType.AccessToken,
+                SignatureMethod = OAuthSignatureMethod.HmacSha1,
+                ParameterHandling = OAuthParameterHandling.HttpAuthorizationHeader,
+                ConsumerKey = TwitterSettings.ConsumerKey,
+                ConsumerSecret = TwitterSettings.ConsumerKeySecret,
+                Token = _oAuthToken,
+                TokenSecret = _oAuthTokenSecret,
+                Verifier = requestVerifier
+            };
+
+            var client = new RestClient
+            {
+                Authority = "https://api.twitter.com/oauth",
+                Credentials = credentials,
+                HasElevatedPermissions = true
+            };
+
+            var request = new RestRequest
+            {
+                Path = "/access_token"
+            };
+
+            client.BeginRequest(request, new RestCallback(RequestAccessTokenCompleted));
+        }
+
+        private void RequestAccessTokenCompleted(RestRequest request, RestResponse response, object userstate)
+        {
+            var twitteruser = new TwitterAccess
+            {
+                AccessToken = GetQueryParameter(response.Content, "oauth_token"),
+                AccessTokenSecret = GetQueryParameter(response.Content, "oauth_token_secret"),
+                UserId = GetQueryParameter(response.Content, "user_id"),
+                ScreenName = GetQueryParameter(response.Content, "screen_name")
+            };
+
+            if (String.IsNullOrEmpty(twitteruser.AccessToken) || String.IsNullOrEmpty(twitteruser.AccessTokenSecret))
+            {
+                Dispatcher.BeginInvoke(() => MessageBox.Show(response.Content));
+                return;
+            }
+
+            IsolatedStorage.SaveSetting(TwitterSettings.TwitterAccess, twitteruser);
+
+            Dispatcher.BeginInvoke(() =>
+            {
+                //if (NavigationService.CanGoBack)
+                //{
+                //    NavigationService.GoBack();
+                //}
+
+                NavigationService.Navigate(new Uri("/View/MainPage.xaml", UriKind.Relative));
+            });
+        }
+
+
+    }
+
+
+}

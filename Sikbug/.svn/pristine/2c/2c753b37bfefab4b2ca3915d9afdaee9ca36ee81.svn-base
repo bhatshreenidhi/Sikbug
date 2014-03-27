@@ -1,0 +1,124 @@
+﻿using System;
+using System.Net;
+using System.Windows;
+using System.Windows.Controls;
+using System.Windows.Documents;
+using System.Windows.Ink;
+using System.Windows.Input;
+using System.Windows.Media;
+using System.Windows.Media.Animation;
+using System.Windows.Shapes;
+using System.Device.Location;
+using System.Xml.Linq;
+using System.Collections.Generic;
+using System.Linq;
+
+
+
+namespace Sikbug.Utils
+{
+    public class Location
+    {
+        #region Get Location Coordinates
+        public delegate void LocationDelegate(Model.Location location);
+        public event LocationDelegate getLocationFinished;
+
+        public string _status = String.Empty;
+        GeoCoordinateWatcher watcher;
+
+
+        public void getLocation()
+        {
+
+            if (watcher == null)
+            {
+                watcher = new GeoCoordinateWatcher(GeoPositionAccuracy.High);  // using high accuracy 
+                watcher.MovementThreshold = 1; // use MovementThreshold to ignore noise in the signal
+                watcher.StatusChanged += new EventHandler<GeoPositionStatusChangedEventArgs>(watcher_StatusChanged);
+                watcher.PositionChanged += new EventHandler<GeoPositionChangedEventArgs<GeoCoordinate>>(watcher_PositionChanged);
+            }
+            watcher.Start();
+        }
+
+        void watcher_StatusChanged(object sender, GeoPositionStatusChangedEventArgs e)
+        {
+            switch (e.Status)
+            {
+                case GeoPositionStatus.Disabled:
+
+                    if (watcher.Permission == GeoPositionPermission.Denied)
+                    {
+                        _status = "you have this application access to location.";
+                    }
+                    else
+                    {
+                        _status = "location is not functioning on this device";
+                    }
+                    break;
+
+                case GeoPositionStatus.Initializing:
+                    _status = "location is initializing";
+                    break;
+                case GeoPositionStatus.NoData:
+                    _status = "location data is not available.";
+                    break;
+
+                case GeoPositionStatus.Ready:
+                    break;
+            }
+
+        }
+
+        void watcher_PositionChanged(object sender, GeoPositionChangedEventArgs<GeoCoordinate> e)
+        {
+            Model.Location location = new Model.Location();
+            double latitude = e.Position.Location.Latitude;
+            double longitude = e.Position.Location.Longitude;
+            double altitude = e.Position.Location.Altitude;
+            GeoCoordinate coordinate = new GeoCoordinate(latitude, longitude, altitude);
+            location.Coordinate = coordinate;
+            getLocationFinished(location);
+        }
+        #endregion
+
+        #region Get Location Name
+
+        public delegate void LocationNameDelegate(string locationName);
+        public event LocationNameDelegate getLocationNameFinished;
+        public void getLocationName(double latitude, double longitude)
+        {
+
+            string baseUri = "http://maps.googleapis.com/maps/api/geocode/xml?latlng= {0},{1}&sensor=false";
+
+            string requestUri = string.Format(baseUri, latitude.ToString(), longitude.ToString());
+            WebClient wc = new WebClient();
+
+            wc.DownloadStringCompleted += new DownloadStringCompletedEventHandler(wc_DownloadStringCompleted);
+            wc.DownloadStringAsync(new Uri(requestUri));
+
+        }
+
+
+        void wc_DownloadStringCompleted(object sender, DownloadStringCompletedEventArgs e)
+        {
+            string address;
+            var xmlElm = XElement.Parse(e.Result);
+            var status = (from elm in xmlElm.Descendants()
+                          where elm.Name == "status"
+                          select elm).FirstOrDefault();
+            if (status.Value.ToLower() == "ok")
+            {
+                var res = (from elm in xmlElm.Descendants()
+                           where elm.Name == "formatted_address"
+                           select elm).FirstOrDefault();
+                address = res.Value;
+            }
+            else
+            {
+                address = String.Empty;
+            }
+            getLocationNameFinished(address);
+        }
+        #endregion
+    }
+}

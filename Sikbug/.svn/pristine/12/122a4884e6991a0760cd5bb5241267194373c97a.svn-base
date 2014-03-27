@@ -1,0 +1,153 @@
+﻿using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Net;
+using System.Windows;
+using System.Windows.Controls;
+using System.Windows.Documents;
+using System.Windows.Input;
+using System.Windows.Media;
+using System.Windows.Media.Animation;
+using System.Windows.Shapes;
+using Microsoft.Phone.Controls;
+using System.Collections.ObjectModel;
+using Sikbug.Model;
+using Sikbug.Helpers;
+using Sikbug.Utils;
+
+namespace Sikbug.View
+{
+    public partial class HomePanaroma : PhoneApplicationPage
+    {
+        //*** (List of all sicknesses)
+        List<Disease> diseaseList = new List<Disease>();
+
+        public HomePanaroma()
+        {
+            InitializeComponent();
+            ObservableCollection<string> settingsNames = new ObservableCollection<string>();
+            settingsNames.Add("MY ACCOUNT");
+            settingsNames.Add("SHARE SIKBUG");
+            settingsNames.Add("HELP & TIPS");
+            settingsNames.Add("ABOUT");
+            reorderListBox.ItemsSource = settingsNames;
+            lstb.ItemsSource = ViewModel.VMSicknessList.getDiseaseList();
+            //*** To be binded (List of all sicknesses)
+            lstb.ItemsSource = ViewModel.VMSicknessList.getDiseaseList();
+
+        }
+
+        #region REPORT SICKNESS LIST
+
+        #region NOT USED
+
+        private void imgCheckUnckeck_Click(object sender, RoutedEventArgs e)
+        {
+            if ((sender as CheckBox).IsChecked == true)
+            {
+                Disease diseaseName = (Sikbug.Model.Disease)((sender as CheckBox).DataContext);
+                diseaseList.Add(diseaseName);
+            }
+        }
+        //private void imgCheckUncheck_MouseLeave(object sender, System.Windows.Input.MouseEventArgs e)
+        //{
+        //    Image sourceImg = (Image)sender;
+        //    if (sourceImg.Tag.Equals("unCheck"))
+        //    {
+        //        sourceImg.Source = (ImageSource)new ImageSourceConverter().ConvertFromString("/Sikbug;component/Resources/Images/Logos/checkImg.png");
+        //        sourceImg.Tag = "Check";
+        //    }
+        //    else
+        //    {
+        //        sourceImg.Source = (ImageSource)new ImageSourceConverter().ConvertFromString("/Sikbug;component/Resources/Images/Logos/uncheckImg.jpg");
+        //        sourceImg.Tag = "unCheck";
+        //    }
+        //}
+        //private void imgPopUp_MouseLeave(object sender, System.Windows.Input.MouseEventArgs e)
+        //{
+        //    //menuPopUp.IsOpen = true;
+        //    //menuPopUp.IsHitTestVisible = true;
+        //    lstb.IsHitTestVisible = false;
+        //}
+        //private void imgHome_MouseLeave(object sender, System.Windows.Input.MouseEventArgs e)
+        //{
+
+        //}
+
+        #endregion
+
+        private void btnSubmit_Click(object sender, RoutedEventArgs e)
+        {
+            string str = String.Empty;
+            foreach (Disease disease in diseaseList)
+                str = str + " " + disease.DiseaseName + ",";
+            TwitterSettings.QueryString = str;
+            NavigationService.Navigate(new Uri("/View/ReportSickness.xaml", UriKind.RelativeOrAbsolute));
+        }
+
+        private void imgCheckUncheck_MouseLeave(object sender, System.Windows.Input.MouseEventArgs e)
+        {
+            Image sourceImg = (Image)sender;
+            if (sourceImg.Tag.Equals("unCheck"))
+            {
+                sourceImg.Source = (ImageSource)new ImageSourceConverter().ConvertFromString("/Sikbug;component/Resources/Images/Logos/checkImg.png");
+                sourceImg.Tag = "Check";
+            }
+            else
+            {
+                sourceImg.Source = (ImageSource)new ImageSourceConverter().ConvertFromString("/Sikbug;component/Resources/Images/Logos/uncheckImg.jpg");
+                sourceImg.Tag = "unCheck";
+            }
+        }
+
+        private void imgPopUp_MouseLeave(object sender, System.Windows.Input.MouseEventArgs e)
+
+        {
+            
+            //menuPopUp.IsOpen = true;
+            //menuPopUp.IsHitTestVisible = true;
+            lstb.IsHitTestVisible = false;
+        }
+
+
+        private void btnClear_Click(object sender, RoutedEventArgs e)
+        {
+            lstb.ItemsSource = ViewModel.VMSicknessList.getDiseaseList();
+            
+        }
+
+        private void btnCancel_Click(object sender, RoutedEventArgs e)
+        {
+            lstb.IsHitTestVisible = true;
+        }
+
+       
+        #endregion
+
+        #region SICKNESS AROUND ME
+        
+        private void btnAroundMe_Click(object sender, RoutedEventArgs e)
+        {
+            NavigationService.Navigate(new Uri("/View/MapPage.xaml", UriKind.Relative));
+        } 
+
+        #endregion
+
+        private void btnMyAccount_Click(object sender, RoutedEventArgs e)
+        {
+            NavigationService.Navigate(new Uri("/View/MyAccount.xaml", UriKind.Relative)); 
+        }
+
+        private void btnShare_Click(object sender, RoutedEventArgs e)
+        {
+            NavigationService.Navigate(new Uri("/View/ShareSikbug.xaml", UriKind.Relative)); 
+        }
+
+        private void btnAboutApp_Click(object sender, RoutedEventArgs e)
+        {
+            var about = new Coding4FunAboutPrompt();
+            about.Show("Clint Rutkas", "ClintRutkas", "Clint@Rutkas.com", "http://betterthaneveryone.com");
+        }
+    }
+    
+}

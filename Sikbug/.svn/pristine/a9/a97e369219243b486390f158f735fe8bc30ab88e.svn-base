@@ -1,0 +1,60 @@
+﻿using System;
+using System.Net;
+using System.Windows;
+using System.Windows.Controls;
+using System.Windows.Documents;
+using System.Windows.Ink;
+using System.Windows.Input;
+using System.Windows.Media;
+using System.Windows.Media.Animation;
+using System.Windows.Shapes;
+using System.Text;
+using System.IO;
+using System.Collections.Generic;
+using Sikbug.Model;
+
+namespace Sikbug.Services
+{
+    public class AroundMeService
+    {
+
+        public delegate void SicknessWithCoordinatesDelegate(List<JsonSickness> sicknessList);
+        public event SicknessWithCoordinatesDelegate SicknessWithCoordinatesFinished;
+
+        //radius should be passed zero if default feature is to be initiated
+        public void GetSicknesses(double latitude, double longitude, double radius)
+        {
+            //default radius 20 miles in sikbug server
+            
+            string requestUri;
+            if (radius != 0)
+                requestUri = "http://ws.sikbug.com/sicknesses_users.json?sicknesses_user[latitude]=" + latitude + "&sicknesses_user[longitude]=" + longitude + "&radius=" + radius + "&api_key=" + App._APIKey;
+            else
+                requestUri = "http://ws.sikbug.com/sicknesses_users.json?sicknesses_user[latitude]=" + latitude + "&sicknesses_user[longitude]=" + longitude + "&api_key=" + App._APIKey;
+
+            WebClient clientRequest = new WebClient();
+            clientRequest.DownloadStringCompleted += new DownloadStringCompletedEventHandler(clientRequest_DownloadStringCompleted);
+            clientRequest.DownloadStringAsync(new Uri(requestUri));
+        }
+
+        void clientRequest_DownloadStringCompleted(object sender, DownloadStringCompletedEventArgs e)
+        {
+            try
+            {
+                string Jsonresult = e.Result;
+                byte[] byteArray = Encoding.UTF8.GetBytes(Jsonresult);
+                MemoryStream stream = new MemoryStream(byteArray);
+                System.Runtime.Serialization.Json.DataContractJsonSerializer sez = new System.Runtime.Serialization.Json.DataContractJsonSerializer(typeof(List<JsonSickness>));
+
+                List<JsonSickness> sicknessList = new List<JsonSickness>();
+
+                sicknessList = (List<JsonSickness>)sez.ReadObject(stream);
+                SicknessWithCoordinatesFinished(sicknessList);
+            }
+            catch(Exception)
+            {
+                SicknessWithCoordinatesFinished(null);
+            }
+        }
+    }
+}
